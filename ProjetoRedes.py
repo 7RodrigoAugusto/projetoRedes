@@ -7,6 +7,10 @@
 # Para realizar a escolha aleatória de uma aresta
 import random
 
+# Threads
+import time
+from threading import Thread
+
 #	----	Classe aresta
 class aresta:
      def __init__(self, u, v):
@@ -94,26 +98,33 @@ def cria_arestas(objs):
 		
 #	----------	************************************	----------
 
-# A chave é o vértice, a informação é uma lista com a rota até ele
-dic_rota = {}
+# Variáveis aux.
+dic_rota = {}	# A chave é o vértice, a informação é uma lista com a rota até ele
 visitados = set()
-a_serem_visitados = set()
+fila_espera = []
 arestas_a_serem_removidas = set()
+caminho = 0
 
 def descobre_vizinhos(fnt_momento,dest):
+	# A disposição dos meus nós foi implementada na forma de arestas de ligação
 	for i in conj_arestas:
+		# Não posso visitar quem já deve ser visitado
+		if (i.v or i.u) in visitados:
+			break
 		if fnt_momento == i.v and dest == i.u:
 			aux = []
 			aux.append(dic_rota[fnt_momento])
 			aux.append(i.u)
 			print("Destino encontrado com caminho:",aux)
-			break
+			caminho = aux
+			return
 		if fnt_momento== i.u and dest == i.v:
 			aux = []
 			aux.append(dic_rota[fnt_momento])
 			aux.append(i.v)
 			print("Destino encontrado com caminho:",aux)
-			break
+			caminho = aux
+			return
 		if fnt_momento == i.u:
 			print("Estamos em:",fnt_momento,'Destino em:',dest)
 			print('Testando aresta:',i.u,i.v)
@@ -125,7 +136,7 @@ def descobre_vizinhos(fnt_momento,dest):
 			#conj_arestas.remove(i)
 			#descobre_vizinhos(atual,dest)
 			arestas_a_serem_removidas.add(i)
-			a_serem_visitados.add(atual)
+			fila_espera.append(atual)
 		if fnt_momento == i.v:
 			print("Estamos em:",fnt_momento,'Destino em:',dest)
 			print('Testando aresta:',i.u,i.v)
@@ -137,20 +148,24 @@ def descobre_vizinhos(fnt_momento,dest):
 			#conj_arestas.remove(i)
 			#descobre_vizinhos(atual,dest)
 			arestas_a_serem_removidas.add(i)
-			a_serem_visitados.add(atual)
+			fila_espera.append(atual)
 		
 	# Remove arestas ja utilizadas		
 	for k in arestas_a_serem_removidas:
 		conj_arestas.remove(k)
 		
-	arestas_a_serem_removidas = set()	
-	
-	# Descobre vizinhos dos novos nos		
-	for l in a_serem_visitados:
-		print(l)
-		#Tenho que limpar as proximas visitas
+	arestas_a_serem_removidas.clear()	
+	print(dic_rota)
+	# Descobre vizinhos dos novos nos	
+	copia = fila_espera
+	#if copia == False:
+	#	return
+	print("Precisamos visitar:",fila_espera)
+	for l in copia:
+		fila_espera.remove(l)
 		descobre_vizinhos(l,dest)
-	return aux
+	
+	return 
 
 def dsr(fnt,dest):
 	# Verifico todos os vizinhos do meu nó fonte e dissemino informação
@@ -158,13 +173,14 @@ def dsr(fnt,dest):
 	print("Destino:",dest)
 	rota_final = []
 
-	
 	dic_rota[fnt] = fnt
 	
 	descobre_vizinhos(fnt,dest)
-	
-	# Dissemina Route Request para todos os vizinhos		
-	#	print(vizinhos)
+	if not fila_espera:
+		print("Inundação completa")
+		pass
+	else
+		descobre_vizinhos(fila_espera[0]) 
 	
 	return
 
@@ -191,8 +207,8 @@ def main():
 	fonte = '1'
 	destino = '7'
 	#	----------	 DSR	-------------- 
-	resultado = dsr(fonte,destino)
-	print('Resultado:',resultado)
+	dsr(fonte,destino)
+	print('Resultado:',caminho)
 	
 	return
 	
