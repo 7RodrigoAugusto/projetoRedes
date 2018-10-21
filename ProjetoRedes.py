@@ -192,14 +192,14 @@ def dsr(fnt,dest):
 
 	dic_rota[fnt] = fnt
 	
+	# Descobre os vizinhos de um nó e encadeia caminho até ele!
 	descobre_vizinhos(fnt,dest)
+	
+	# Print dos nós à serem visitados
 	print(fila_espera)
+	
 	# Enquanto a fila de espera existir, e o nó destino não for encontrado
 	while fila_espera != []:
-		#if not fila_espera:
-		#	print("Inundação completa")
-		#	pass
-		#else:
 		print("Ainda falta:",fila_espera)
 		descobre_vizinhos(fila_espera[0],dest) 
 	
