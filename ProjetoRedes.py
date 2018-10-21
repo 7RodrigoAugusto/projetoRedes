@@ -109,52 +109,66 @@ caminho = 0
 def descobre_vizinhos(fnt_momento,dest):
 	# A disposição dos meus nós foi implementada na forma de arestas de ligação
 	# Visito as arestas que estão conectadas com meu nó atual
-	for i in conj_arestas:
-		print(i.v)
-		print(i.u)
-		print(visitados)
-		if (i.v or i.u) in visitados:
-			#print('Oi')
-			pass
-		else:
-			if fnt_momento == i.v and dest == i.u:
-				aux = []
-				aux.append(dic_rota[fnt_momento])
-				aux.append(i.u)
-				print("Destino encontrado com caminho:",aux)
-				caminho = aux
-			if fnt_momento== i.u and dest == i.v:
-				aux = []
-				aux.append(dic_rota[fnt_momento])
-				aux.append(i.v)
-				print("Destino encontrado com caminho:",aux)
-				caminho = aux
-			if fnt_momento == i.u:
-				print("Estamos em:",fnt_momento,'Destino em:',dest)
-				print('Testando aresta:',i.u,i.v)
-				aux = []
-				aux.append(dic_rota[fnt_momento])
-				aux.append(i.v)
-				dic_rota[i.v] = aux
-				atual = i.v
-				arestas_a_serem_removidas.add(i)
-				fila_espera.append(atual)
-			if fnt_momento == i.v:
-				print("Estamos em:",fnt_momento,'Destino em:',dest)
-				print('Testando aresta:',i.u,i.v)
-				aux = []
-				aux.append(dic_rota[fnt_momento])
-				aux.append(i.u)
-				dic_rota[i.u] = aux	
-				atual = i.u
-				arestas_a_serem_removidas.add(i)
-				fila_espera.append(atual)
+	
+	# Se a aresta destino for a mesma, fim!
+	if fnt_momento == dest:
+			aux = []
+			aux.append(dic_rota[fnt_momento])
+			print("Destino encontrado com caminho:",aux)
+	else:
+		# Busca arestas vizinhas
+		for i in conj_arestas:
+			print('Nós visitados:',visitados)
+			
+			# Se o nó já foi visitado, ignora, pois ele já tá na fila de inundação
+			if (i.v or i.u) in visitados:
+				pass
+			else:
+				# Se for o nó do momento e o destino, destino encontrado
+				if fnt_momento == i.v and dest == i.u:
+					aux = []
+					aux.append(dic_rota[fnt_momento])
+					aux.append(i.u)
+					print("Destino encontrado com caminho:",aux)
+					caminho = aux
+				# Se for nó do momento e o destino, destino encontrado	
+				if fnt_momento== i.u and dest == i.v:
+					aux = []
+					aux.append(dic_rota[fnt_momento])
+					aux.append(i.v)
+					print("Destino encontrado com caminho:",aux)
+					caminho = aux
+				# Se for o nó atual, descobre os vizinhos, e encadeia cabeçalho	
+				if fnt_momento == i.u:
+					print("Estamos em:",fnt_momento,'Destino em:',dest)
+					print('Testando aresta:',i.u,i.v)
+					aux = []
+					aux.append(dic_rota[fnt_momento])
+					aux.append(i.v)
+					dic_rota[i.v] = aux
+					atual = i.v
+					arestas_a_serem_removidas.add(i)
+					fila_espera.append(atual)
+				# Se for o nó atual, descobre os vizinhos, e encadeia cabeçalho		
+				if fnt_momento == i.v:
+					print("Estamos em:",fnt_momento,'Destino em:',dest)
+					print('Testando aresta:',i.u,i.v)
+					aux = []
+					aux.append(dic_rota[fnt_momento])
+					aux.append(i.u)
+					dic_rota[i.u] = aux	
+					atual = i.u
+					arestas_a_serem_removidas.add(i)
+					fila_espera.append(atual)
 		
 	# Remove arestas já visitadas	
-	for k in arestas_a_serem_removidas:
-		conj_arestas.remove(k)
+	try:
+		for k in arestas_a_serem_removidas:
+			conj_arestas.remove(k)
+		arestas_a_serem_removidas.clear()
+	except:
+		pass
 		
-	arestas_a_serem_removidas.clear()	
 	print('Dicionario:',dic_rota)
 	
 	# Adiciona o nó atual aos visitados
@@ -162,8 +176,9 @@ def descobre_vizinhos(fnt_momento,dest):
 	
 	# Remove nó atual da fila de espera
 	try:
-		print("'"+fnt_momento+"'")
-		fila_espera.remove("'"+fnt_momento+"'")
+		print('Removendo:'+"'"+fnt_momento+"'")
+		del fila_espera[0]
+		#fila_espera.remove("'"+fnt_momento+"'")
 	except:
 		pass
 	
@@ -178,8 +193,9 @@ def dsr(fnt,dest):
 	dic_rota[fnt] = fnt
 	
 	descobre_vizinhos(fnt,dest)
+	print(fila_espera)
 	# Enquanto a fila de espera existir, e o nó destino não for encontrado
-	while fila_espera != None:
+	while fila_espera != []:
 		#if not fila_espera:
 		#	print("Inundação completa")
 		#	pass
