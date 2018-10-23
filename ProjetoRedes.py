@@ -12,23 +12,29 @@ import random
 import time
 from threading import Thread
 
+#	----	Classe vértice
+class vertice:
+	def __init__(self, caminho, nome):         
+         self.caminho = caminho
+         self.nome = nome
+
 #	----	Classe aresta
 class aresta:
      def __init__(self, u, v):
      	# Vértices
          self.u = u	
          self.v = v
+    
          
-#	-----	Conjunto que contém todas as arestas         
+#	-----	Conjunto que contém todas as arestas	-----        
 conj_arestas = []
 
+#	-----	Conjunto que contém os vértices já visitados	-----
 vertices_aux = []
 
 
-
-#	-----	Função para abrir arquivos e criar o conjunto de arestas
+#	-----	Função para abrir arquivos e criar o conjunto de arestas	-----
 def abreArquivo():
-	#frb30-15-mis/frb30-15-1.mis
 	txt = open('nos.txt','r').readlines()
 	array = []
 	i = 0
@@ -40,25 +46,31 @@ def abreArquivo():
 			pass
 		else:
 			vetor_aux = item.strip('\n').split(' ') 
+			print('Inicio',vetor_aux[1],vetor_aux[2])
 			conj_arestas.append(aresta(vetor_aux[1],vetor_aux[2]))
 			array.append(vetor_aux)	#Removo o \n de cada elemento do array
 	
 	return array, qtd_vertices, qtd_arestas
 	
-#	----------	FUNÇÕES QUE MANIPULAM AS LISTAS E SETS DE VÉRTICES	----------
-	
-#	-----	Cria conjunto de todos os vértices para auxiliar na função limpa()
-def cria_vertices():
-	for item in conj_arestas:
-		if item.u not in vertices_aux:
-			vertices_aux.append(item.u)
-		if item.v not in vertices_aux:
-			vertices_aux.append(item.v)
+#	----------	FUNÇÕES QUE MANIPULAM AS LISTAS CLASSE DE VÉRTICES	----------
+#	-----	Cria conjunto de todos os vértices, com informação de cabeçalho
+def cria_vertice(caminho, nome):
+	print('Caminho e nome:',caminho, nome)
+	vertices_aux.append(vertice(caminho,nome))
 	return
-	
-	
-#	----------	FUNÇÕES QUE MANIPULAM A CLASSE ARESTA	----------
 
+def print_vertices():
+	print(" ------------------------------ \n")
+	print("Quantidade de vertices:",len(vertices_aux))
+	print("Vertices existentes: \n")
+	for obj in vertices_aux:
+		print(obj.caminho,obj.nome)
+	
+	print(" ------------------------------ \n")
+	return		
+	
+		
+#	----------	FUNÇÕES QUE MANIPULAM A CLASSE ARESTA	----------
 #	-----	Função para printar as arestas durante os testes
 def print_arestas():
 	print(" ------------------------------ \n")
@@ -70,36 +82,10 @@ def print_arestas():
 	print(" ------------------------------ \n")
 	return	
 		
-#	-----	Remover arestas que contenham elementos dos vértices já escolhidos
-def remove_arestas():
-	for item in reversed(conj_arestas):
-		#print(item.u,item.v)
-		if item.u in conj_vertices:
-			#print("Remove", item.u, item.v)
-			conj_arestas.remove(item)
-		elif item.v in conj_vertices:
-			#print("Remove", item.u, item.v)
-			conj_arestas.remove(item)
-		else:
-			#print("Fica", item.u, item.v)
-			pass 
-	return
-
-# - Remove todas as arestas	
-def remove_arestas_todas():
-	for item in reversed(conj_arestas):	
-		conj_arestas.remove(item)
-
-#	-----	Cria o conjunto de arestas
-def cria_arestas(objs):
-	for item in objs:
-		conj_arestas.append(aresta(item[1],item[2]))
-	return
-		
 		
 #	----------	************************************	----------
 
-# Variáveis aux.
+#	---------- Variáveis aux.
 dic_rota = {}	# A chave é o vértice, a informação é uma lista com a rota até ele
 visitados = set()
 fila_espera = []
@@ -126,39 +112,74 @@ def descobre_vizinhos(fnt_momento,dest):
 			else:
 				# Se for o nó do momento e o destino, destino encontrado
 				if fnt_momento == i.v and dest == i.u:
+				
+					# - Encadeia rota
 					aux = []
-					aux.append(dic_rota[fnt_momento])
-					aux.append(i.u)
+					for item in dic_rota[fnt_momento]:
+						aux.append(item)
+					aux.append(i.u)	
+					
+					# - Cria elemento da classe vértice, com informação do encadeamento
+					cria_vertice(aux,i.u)
 					print("Destino encontrado com caminho:",aux)
 					caminho = aux
+					
 				# Se for nó do momento e o destino, destino encontrado	
 				if fnt_momento== i.u and dest == i.v:
+				
+					# - Encadeia rota
 					aux = []
-					aux.append(dic_rota[fnt_momento])
+					for item in dic_rota[fnt_momento]:
+						aux.append(item)
 					aux.append(i.v)
+					
+					# - Cria elemento da classe vértice, com informação do encadeamento
+					cria_vertice(aux,i.v)
 					print("Destino encontrado com caminho:",aux)
 					caminho = aux
+					
 				# Se for o nó atual, descobre os vizinhos, e encadeia cabeçalho	
 				if fnt_momento == i.u:
 					print("Estamos em:",fnt_momento,'Destino em:',dest)
 					print('Testando aresta:',i.u,i.v)
+					
+					# - Encadeia rota
 					aux = []
-					aux.append(dic_rota[fnt_momento])
+					for item in dic_rota[fnt_momento]:
+						aux.append(item)
 					aux.append(i.v)
 					dic_rota[i.v] = aux
 					atual = i.v
+					
+					# - Cria elemento da classe vértice, com informação do encadeamento
+					cria_vertice(aux,atual)
+					
+					# - Adiciona a aresta, no conjunto de arestas a serem removidas
 					arestas_a_serem_removidas.add(i)
+					
+					# - Adiciona o atual na fila de espera para visita
 					fila_espera.append(atual)
+					
 				# Se for o nó atual, descobre os vizinhos, e encadeia cabeçalho		
 				if fnt_momento == i.v:
 					print("Estamos em:",fnt_momento,'Destino em:',dest)
 					print('Testando aresta:',i.u,i.v)
+					
+					# - Encadeia rota
 					aux = []
-					aux.append(dic_rota[fnt_momento])
+					for item in dic_rota[fnt_momento]:
+						aux.append(item)
 					aux.append(i.u)
 					dic_rota[i.u] = aux	
 					atual = i.u
+					
+					# - Cria elemento da classe vértice, com informação do encadeamento
+					cria_vertice(aux,atual)
+					
+					# - Adiciona a aresta, no conjunto de arestas a serem removidas
 					arestas_a_serem_removidas.add(i)
+					
+					# - Adiciona o atual na fila de espera para visita
 					fila_espera.append(atual)
 		
 	# Remove arestas já visitadas	
@@ -178,7 +199,6 @@ def descobre_vizinhos(fnt_momento,dest):
 	try:
 		print('Removendo:'+"'"+fnt_momento+"'")
 		del fila_espera[0]
-		#fila_espera.remove("'"+fnt_momento+"'")
 	except:
 		pass
 	
@@ -206,7 +226,7 @@ def dsr(fnt,dest):
 	return
 
 		
-#	-----	main
+#	----------	main
 def main():
 
 	# - Abre o arquivo e cria os elementos da classe aresta
@@ -217,10 +237,6 @@ def main():
 	print("Quantidade inicial de vértices(nós): \n",qtd_vertices)
 	print("Inicialmente temos:",len(conj_arestas),"arestas\n")
 	
-	# - Cria lista dos vértices para ajudar na função limpa()
-	cria_vertices()
-	print("Vertices_aux:",vertices_aux,"\n")
-	
 	# - Apresenta o conjunto de arestas atual
 	print_arestas()	
 	#	----------	FIM INFORMAÇÕES	--------------
@@ -229,7 +245,8 @@ def main():
 	destino = '7'
 	#	----------	 DSR	-------------- 
 	dsr(fonte,destino)
-	print('Resultado:',caminho)
+	
+	print_vertices()
 	
 	return
 	
