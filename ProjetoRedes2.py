@@ -4,16 +4,12 @@
 #	----						----	
 
 #	----	Bibliotecas
-
 # Para realizar a escolha aleatória de uma aresta
-
 import random
-import sys 
+import sys
 
-# Threads
-import time
-from threading import Thread
 
+#	---------- CLASSES	----------  
 #	----	Classe vértice
 class vertice:
 	def __init__(self, caminho, nome, energia):         
@@ -27,24 +23,22 @@ class aresta:
      	# Vértices
          self.u = u	
          self.v = v
-    
-       
-#	-----	Conjunto que contém todas as arestas	-----        
-conj_arestas = []
-
-#	-----	Conjunto inicial de vértices	-----
-conj_vertices = []
-
-#	-----	Conjunto que contém os vértices já visitados	-----
-vertices_aux = []
+         
+#	---------- FIM CLASSES	----------       
 
 
-#	---------- Variáveis aux.	----------
+#	---------- Variáveis aux.	----------    
+conj_arestas = []	#	-----	Conjunto que contém todas as arestas	-----    
+conj_vertices = []	#	-----	Conjunto inicial de vértices	-----
+vertices_aux = []	#	-----	Conjunto que contém os vértices já visitados	-----
+
 dic_rota = {}		# A chave é o vértice, a informação é uma lista com a rota até ele
 visitados = set()	# Variável que funciona para marcar os vértices já visitados
 fila_espera = []	# Fila de espera dos vértices que foram encontrados mas ainda não deram broadcast
 arestas_a_serem_removidas = set() # Arestas a serem removidas, pois já foram visitadas
 fim = 0
+#	---------- FIM AUX	----------
+
 
 #	-----	Função para abrir arquivos e criar o conjunto de arestas	-----
 def abreArquivo():
@@ -65,13 +59,16 @@ def abreArquivo():
 	
 	return array, qtd_vertices, qtd_arestas
 	
-#	----------	FUNÇÕES QUE MANIPULAM AS LISTAS CLASSE DE VÉRTICES	----------
+
+#	----------	FUNÇÕES CLASSE DE VÉRTICES	----------
+
 #	-----	Cria conjunto de todos os vértices, com informação de cabeçalho
 def cria_vertice(caminho, nome):
 	print('Caminho e nome:',caminho, nome)
 	vertices_aux.append(vertice(caminho,nome))
 	return
 
+# Cria cada elemento da classe vértice
 def cria_vertices():
 	set_nos = set()
 	for item in conj_arestas:
@@ -83,7 +80,8 @@ def cria_vertices():
 		
 	print_vertices(conj_vertices)
 	return	
-	
+
+# Print da lista de elementos da classe vértice	
 def print_vertices(vertices):
 	print(" ------------------------------ \n")
 	print("Quantidade de vertices:",len(vertices_aux))
@@ -93,10 +91,20 @@ def print_vertices(vertices):
 	
 	print(" ------------------------------ \n")
 	return		
+
+# Retorna pelo nome do nó, o seu elemento na classe vértice	
+def retorna_vertice(no):
+	for item in conj_vertices:
+		if no == item.nome:
+			return	item
+		else:
+			pass
+
+#	----------	FIM VÉRTICES	----------	
 	
-	
+
 			
-#	----------	FUNÇÕES QUE MANIPULAM A CLASSE ARESTA	----------
+#	----------	FUNÇÕES CLASSE ARESTA	----------
 #	-----	Função para printar as arestas durante os testes
 def print_arestas():
 	print(" ------------------------------ \n")
@@ -107,21 +115,66 @@ def print_arestas():
 	
 	print(" ------------------------------ \n")
 	return	
-		
 
+def remove_arestas_visitadas():
+	# Remove arestas já visitadas	
+	try:
+		for k in arestas_a_serem_removidas:
+			conj_arestas.remove(k)
+		arestas_a_serem_removidas.clear()
+	except:
+		pass
+	return		
+#	----------	FIM ARESTAS	----------
+
+
+
+#	----------	FUNÇÕES	----------
 # - Função que cria as arestas para devolver a informação 
 def alert(aux):
-	print("Destino encontrado com caminho:",aux)
+	print("Destino encontrado com caminho:",aux.caminho)
 	fim = 1
-	print_vertices()
+	print_vertices(vertices_aux)
 	sys.exit()
-		
+
+def encadeia(atual,vizinho):
+	print(atual,vizinho)
+	aux = []	# Lista auxiliar para conter os dados do caminho até o nó atual
+	# Encontro o vizinho
+	for item in dic_rota[atual]:
+		aux.append(item)
+	# Crio o caminho para o meu vizinho de acordo com o caminho para o atual + vizinho
+	aux.append(vizinho)	
+	
+	# Retorno o elemento que representa o meu vizinho
+	elemento_vizinho = retorna_vertice(vizinho)
+	
+	# Atualiza informação do vértice vizinho, com a lista de dados encadeados
+	elemento_vizinho.caminho = aux
+	
+	try:
+		dic_rota[vizinho] = aux
+	except:
+		pass
+	
+	return
+
+def remove_no_espera(atual):
+	# Remove nó atual da fila de espera
+	try:
+		print('Removendo:'+"'"+atual+"'")
+		del fila_espera[0]
+	except:
+		pass
+	return			
+
 #	----------	************************************	----------
 
-def descobre_vizinhos(fnt_momento,dest):
+def broadcast(fnt_momento,dest):
+
 	# A disposição dos nós foi implementada na forma de arestas de ligação
 	# Visito as arestas que estão conectadas com meu nó atual
-	
+	print('Nós visitados:',visitados)
 	# Se a aresta destino for a mesma, fim!
 	if fnt_momento == dest:
 			aux = []
@@ -130,110 +183,59 @@ def descobre_vizinhos(fnt_momento,dest):
 	else:
 		# Busca arestas vizinhas
 		for i in conj_arestas:
-			print('Nós visitados:',visitados)
 			# Se o nó já foi visitado, ignora, pois ele já tá na fila de inundação
 			if (i.v or i.u) in visitados:
 				pass
 			else:
 				# Se for o nó do momento e o destino, destino encontrado
 				if fnt_momento == i.v and dest == i.u:		
-					# - Encadeia rota
-					aux = []
-					for item in dic_rota[fnt_momento]:
-						aux.append(item)
-					aux.append(i.u)	
-					
-					# - Cria elemento da classe vértice, com informação do encadeamento
-					cria_vertice(aux,i.u)
-					alert(aux)
+					encadeia(fnt_momento,i.u)
+					elemento_final = retorna_vertice(i.u)
+					alert(elemento_final)
 					
 				# Se for nó do momento e o destino, destino encontrado	
 				if fnt_momento== i.u and dest == i.v:				
-					# - Encadeia rota
-					aux = []
-					for item in dic_rota[fnt_momento]:
-						aux.append(item)
-					aux.append(i.v)
-					
-					# - Cria elemento da classe vértice, com informação do encadeamento
-					cria_vertice(aux,i.v)
-					alert(aux)
+					encadeia(fnt_momento,i.v)
+					elemento_final = retorna_vertice(i.v)
+					alert(elemento_final)
 					
 				# Se for o nó atual, descobre os vizinhos, e encadeia cabeçalho	
 				if fnt_momento == i.u:
-					print("Estamos em:",fnt_momento,'Destino em:',dest)
-					print('Testando aresta:',i.u,i.v)
-					
-					# - Encadeia rota
-					aux = []
-					for item in dic_rota[fnt_momento]:
-						aux.append(item)
-					aux.append(i.v)
-					dic_rota[i.v] = aux
-					atual = i.v
-					
-					# - Cria elemento da classe vértice, com informação do encadeamento
-					cria_vertice(aux,atual)
-					
-					# - Adiciona a aresta, no conjunto de arestas a serem removidas
-					arestas_a_serem_removidas.add(i)
-					
-					# - Adiciona o atual na fila de espera para visita
-					fila_espera.append(atual)
+					encadeia(fnt_momento,i.v)
+					arestas_a_serem_removidas.add(i)	# - Adiciona a aresta, no conjunto de arestas a serem removidas
+					fila_espera.append(i.v)				# - Adiciona o atual na fila de espera para visita
 					
 				# Se for o nó atual, descobre os vizinhos, e encadeia cabeçalho		
 				if fnt_momento == i.v:
-					print("Estamos em:",fnt_momento,'Destino em:',dest)
-					print('Testando aresta:',i.u,i.v)
-					
-					# - Encadeia rota
-					aux = []
-					for item in dic_rota[fnt_momento]:
-						aux.append(item)
-					aux.append(i.u)
-					dic_rota[i.u] = aux	
-					atual = i.u
-					
-					# - Cria elemento da classe vértice, com informação do encadeamento
-					cria_vertice(aux,atual)
-					
-					# - Adiciona a aresta, no conjunto de arestas a serem removidas
-					arestas_a_serem_removidas.add(i)
-					
-					# - Adiciona o atual na fila de espera para visita
-					fila_espera.append(atual)
+					encadeia(fnt_momento,i.u)
+					arestas_a_serem_removidas.add(i)	# - Adiciona a aresta, no conjunto de arestas a serem removidas
+					fila_espera.append(i.u)			# - Adiciona o atual na fila de espera para visita
 		
-		
-	# Remove arestas já visitadas	
-	try:
-		for k in arestas_a_serem_removidas:
-			conj_arestas.remove(k)
-		arestas_a_serem_removidas.clear()
-	except:
-		pass
+	remove_arestas_visitadas()	# - Remove arestas já visitadas	
 		
 	print('Dicionario:',dic_rota)
 	
 	# Adiciona o nó atual aos visitados
 	visitados.add(fnt_momento)
 	
-	# Remove nó atual da fila de espera
-	try:
-		print('Removendo:'+"'"+fnt_momento+"'")
-		del fila_espera[0]
-	except:
-		pass
+	remove_no_espera(fnt_momento)	# - Remove nó atual da fila de espera
 	
 	return 
 
 def dsr(fnt,dest):
 	# Verifico todos os vizinhos do meu nó fonte e dissemino informação
-	print("Fonte:",fnt)
-	print("Destino:",dest)
-	dic_rota[fnt] = fnt
+	elemento = retorna_vertice(fnt)		# Pego o elemento da classe vertice que representa o nó, neste caso o nó fonte
+	elemento_dest = retorna_vertice(dest)# Pego o elemento da classe vertice que representa o nó, neste caso o nó destino
+	
+	# Print informações iniciais da inundação
+	print("Fonte:",elemento.caminho,elemento.nome,elemento.energia)
+	print("Destino:",elemento_dest.caminho,elemento_dest.nome,elemento_dest.energia)
+	
+	# Crio dicionário do meu nó fonte
+	dic_rota[elemento.nome] = elemento.nome
 	
 	# Descobre os vizinhos de um nó e encadeia caminho até ele!
-	descobre_vizinhos(fnt,dest)
+	broadcast(elemento.nome,elemento_dest.nome)
 	
 	# Print dos nós à serem visitados
 	print(fila_espera)
@@ -241,7 +243,7 @@ def dsr(fnt,dest):
 	# Enquanto a fila de espera existir, e o nó destino não for encontrado
 	while fila_espera != []:
 		print("Ainda falta:",fila_espera)
-		descobre_vizinhos(fila_espera[0],dest) 
+		broadcast(fila_espera[0],dest) 
 	
 	return
 
