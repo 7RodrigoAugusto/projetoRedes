@@ -186,6 +186,12 @@ def limpa_fila_espera():
 	fila_espera.clear()
 	return
 
+
+# Energia é consumida em broadcast, route response e envio de dados
+def remove_energia(atual):
+	atual = retorna_vertice(atual)
+	atual.energia = atual.energia - 10
+	
 #	----------	*******	----------
 
 
@@ -247,7 +253,9 @@ def broadcast(no_atual,dest):
 						arestas_a_serem_removidas.add(i)	# - Adiciona a aresta, no conjunto de arestas a serem removidas
 						visitados.add(i.u)					# - Adiciona o nó que eu encontro, do meu atual, aos visitados
 						fila_espera.append(i.u)				# - Adiciona o visitado na fila de espera para BROADCAST
-				
+		
+		# Diminui energia
+		remove_energia(no_atual)		
 		broadcast_completo.add(no_atual)
 				
 		remove_arestas_visitadas()	# - Remove arestas já visitadas	
@@ -268,6 +276,7 @@ def aresta_response(dest, caminho):
 def route_response(destino):
 	caminho_resposta = destino.caminho
 	for i in reversed(caminho_resposta[:-1]):
+		remove_energia(i)
 		aresta_response(i,caminho_resposta) # Passo para o vértice o caminho até o destino
 	return	
 
@@ -276,6 +285,7 @@ def envia_dados(fonte,dados):
 	caminho = fonte.info_response
 	# Posso fazer pra ficar pegando o dado sempre do anterior, pra parecer mais 'real'
 	for i in caminho:
+		remove_energia(i)
 		elemento = retorna_vertice(i)	# Pego elemento
 		elemento.dado = dados
 	return
