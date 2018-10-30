@@ -80,7 +80,7 @@ def print_vertices(vertices):
 	print("Quantidade de vertices:",len(vertices))
 	print("Vertices existentes: \n")
 	for obj in vertices:
-		print(obj.caminho,obj.nome,obj.energia, obj.info_response, obj.dado)
+		print('Nome do nó:',obj.nome,'\t Caminho:',obj.caminho,'\t Energia:',obj.energia,'\t Caminho response:',obj.info_response,'\t Informação:', obj.dado)
 	
 	print(" ------------------------------ \n")
 	return		
@@ -293,7 +293,9 @@ def dsr(fnt,dest,info):
 	dic_rota[elemento.nome] = elemento.nome
 	# O caminho para a fonte é ele mesmo
 	elemento.caminho =	list(elemento.nome)
+	elemento.dado = info
 	
+	print("Inicializando o Route Request")
 	# ------	ROUTE REQUEST	------
 	# Descobre os vizinhos de um nó e encadeia caminho até ele!
 	broadcast(elemento.nome,elemento_dest.nome)
@@ -302,10 +304,17 @@ def dsr(fnt,dest,info):
 		print("Fila de broadcast:",fila_espera) # FILA DE ESPERA PARA BROADCAST
 		broadcast(fila_espera[0],dest)
 	#	----------	*******	----------
+	print("Fim do Route Request")
 	
-	print_arestas()
+	print("Inicializando o Route Response")
+	print_vertices(conj_vertices)
 	route_response(elemento_dest)
+	print("Fim do Route Response")
+	
+	print("Inicializando o envio de dados")
+	print_vertices(conj_vertices)
 	envia_dados(elemento,info)
+	print("Fim do envio de dados")
 	
 	print('Fim do DSR')
 	print_vertices(conj_vertices)
