@@ -30,13 +30,18 @@ class aresta:
 #	---------- Variáveis aux.	----------    
 conj_arestas = []	#	-----	Conjunto que contém todas as arestas	-----    
 conj_vertices = []	#	-----	Conjunto inicial de vértices	-----
-vertices_aux = []	#	-----	Conjunto que contém os vértices já visitados	-----
+
 
 dic_rota = {}		# A chave é o vértice, a informação é uma lista com a rota até ele
+
 visitados = set()	# Variável que funciona para marcar os vértices já visitados
+broadcast_completo = set()	# Conjunto de nós que já fizeram broadcast
+
 fila_espera = []	# Fila de espera dos vértices que foram encontrados mas ainda não deram broadcast
 arestas_a_serem_removidas = set() # Arestas a serem removidas, pois já foram visitadas
-fim = 0
+fim = 0				# Variável que determina fim do broadcast (route request)
+
+
 #	---------- FIM AUX	----------
 
 
@@ -84,7 +89,7 @@ def cria_vertices():
 # Print da lista de elementos da classe vértice	
 def print_vertices(vertices):
 	print(" ------------------------------ \n")
-	print("Quantidade de vertices:",len(vertices_aux))
+	print("Quantidade de vertices:",len(vertices))
 	print("Vertices existentes: \n")
 	for obj in vertices:
 		print(obj.caminho,obj.nome,obj.energia)
@@ -128,21 +133,27 @@ def remove_arestas_visitadas():
 #	----------	FIM ARESTAS	----------
 
 
+# Limpa fila para inundação, pois o destino foi encontrado
+def limpa_fila_espera():
+	fila_espera.clear()
+	return
 
 #	----------	FUNÇÕES	----------
 # - Função que cria as arestas para devolver a informação 
 def alert(aux):
 	print("Destino encontrado com caminho:",aux.caminho)
 	fim = 1
-	print_vertices(vertices_aux)
-	sys.exit()
+	print_vertices(conj_vertices)
+	limpa_fila_espera()
+	return
 
 def encadeia(atual,vizinho):
-	print(atual,vizinho)
 	aux = []	# Lista auxiliar para conter os dados do caminho até o nó atual
+	
 	# Encontro o vizinho
 	for item in dic_rota[atual]:
 		aux.append(item)
+	
 	# Crio o caminho para o meu vizinho de acordo com o caminho para o atual + vizinho
 	aux.append(vizinho)	
 	
@@ -158,7 +169,7 @@ def encadeia(atual,vizinho):
 		pass
 	
 	return
-
+	
 def remove_no_espera(atual):
 	# Remove nó atual da fila de espera
 	try:
@@ -168,63 +179,89 @@ def remove_no_espera(atual):
 		pass
 	return			
 
+
+
 #	----------	************************************	----------
+#nós já são visitados de cara, broadcast é outra coisa
 
-def broadcast(fnt_momento,dest):
-
+def broadcast(no_atual,dest):
 	# A disposição dos nós foi implementada na forma de arestas de ligação
 	# Visito as arestas que estão conectadas com meu nó atual
-	print('Nós visitados:',visitados)
+	print('Nós visitados:', visitados)
+	print("Nós com broadcast completo:", broadcast_completo)
+	
 	# Se a aresta destino for a mesma, fim!
-	if fnt_momento == dest:
+	if no_atual == dest:
 			aux = []
-			aux.append(dic_rota[fnt_momento])
+			aux.append(dic_rota[no_atual])
 			alert(aux)
 	else:
 		# Busca arestas vizinhas
 		for i in conj_arestas:
-			# Se o nó já foi visitado, ignora, pois ele já tá na fila de inundação
-			if (i.v or i.u) in visitados:
+			# Se o nó já fez broadcast, ignora
+			print(i.u,i.v)
+			print("Nós com broadcast completo:", broadcast_completo)
+			if	i.u  in broadcast_completo:
+				print('O nó',i.u,'já fez broadcast')
+				pass
+			elif i.v in broadcast_completo:
+				print('O nó',i.v,' já fez broadcast')
 				pass
 			else:
 				# Se for o nó do momento e o destino, destino encontrado
-				if fnt_momento == i.v and dest == i.u:		
-					encadeia(fnt_momento,i.u)
+				if no_atual == i.v and dest == i.u:		
+					encadeia(no_atual,i.u)
 					elemento_final = retorna_vertice(i.u)
 					alert(elemento_final)
+					return
 					
 				# Se for nó do momento e o destino, destino encontrado	
-				if fnt_momento== i.u and dest == i.v:				
-					encadeia(fnt_momento,i.v)
+				if no_atual== i.u and dest == i.v:				
+					encadeia(no_atual,i.v)
 					elemento_final = retorna_vertice(i.v)
 					alert(elemento_final)
+					return
 					
 				# Se for o nó atual, descobre os vizinhos, e encadeia cabeçalho	
-				if fnt_momento == i.u:
-					encadeia(fnt_momento,i.v)
-					arestas_a_serem_removidas.add(i)	# - Adiciona a aresta, no conjunto de arestas a serem removidas
-					fila_espera.append(i.v)				# - Adiciona o atual na fila de espera para visita
+				if no_atual == i.u:
+					if i.v in visitados:
+						pass
+					else:
+						encadeia(no_atual,i.v)
+						arestas_a_serem_removidas.add(i)	# - Adiciona a aresta, no conjunto de arestas a serem removidas
+						visitados.add(i.v)					# - Adiciona o nó que eu encontro, do meu atual, aos visitados
+						fila_espera.append(i.v)				# - Adiciona o visitado na fila de espera para BROADCAST
 					
 				# Se for o nó atual, descobre os vizinhos, e encadeia cabeçalho		
-				if fnt_momento == i.v:
-					encadeia(fnt_momento,i.u)
-					arestas_a_serem_removidas.add(i)	# - Adiciona a aresta, no conjunto de arestas a serem removidas
-					fila_espera.append(i.u)			# - Adiciona o atual na fila de espera para visita
+				if no_atual == i.v:
+					if i.u in visitados:
+						pass
+					else:	
+						encadeia(no_atual,i.u)
+						arestas_a_serem_removidas.add(i)	# - Adiciona a aresta, no conjunto de arestas a serem removidas
+						visitados.add(i.u)					# - Adiciona o nó que eu encontro, do meu atual, aos visitados
+						fila_espera.append(i.u)				# - Adiciona o visitado na fila de espera para BROADCAST
+				
+		broadcast_completo.add(no_atual)
 		
-	remove_arestas_visitadas()	# - Remove arestas já visitadas	
+		print('Fila de espera:',fila_espera)
+				
+		remove_arestas_visitadas()	# - Remove arestas já visitadas	
 		
-	print('Dicionario:',dic_rota)
-	
-	# Adiciona o nó atual aos visitados
-	visitados.add(fnt_momento)
-	
-	remove_no_espera(fnt_momento)	# - Remove nó atual da fila de espera
+		print('Dicionario:',dic_rota)
+		# O primeiro nó nunca esteve na fila de espera
+		if no_atual in fila_espera:
+			remove_no_espera(no_atual)	# - Remove nó atual da fila de espera
 	
 	return 
+	
+def route_response():
+
+	return	
 
 def dsr(fnt,dest):
 	# Verifico todos os vizinhos do meu nó fonte e dissemino informação
-	elemento = retorna_vertice(fnt)		# Pego o elemento da classe vertice que representa o nó, neste caso o nó fonte
+	elemento = retorna_vertice(fnt)		 # Pego o elemento da classe vertice que representa o nó, neste caso o nó fonte
 	elemento_dest = retorna_vertice(dest)# Pego o elemento da classe vertice que representa o nó, neste caso o nó destino
 	
 	# Print informações iniciais da inundação
@@ -233,17 +270,21 @@ def dsr(fnt,dest):
 	
 	# Crio dicionário do meu nó fonte
 	dic_rota[elemento.nome] = elemento.nome
+	# O caminho para a fonte é ele mesmo
+	elemento.caminho =	list(elemento.nome)
 	
 	# Descobre os vizinhos de um nó e encadeia caminho até ele!
 	broadcast(elemento.nome,elemento_dest.nome)
 	
-	# Print dos nós à serem visitados
-	print(fila_espera)
-	
-	# Enquanto a fila de espera existir, e o nó destino não for encontrado
+	# Enquanto a fila de espera para BROADCAST
 	while fila_espera != []:
-		print("Ainda falta:",fila_espera)
-		broadcast(fila_espera[0],dest) 
+		print("Ainda falta:",fila_espera) # FILA DE ESPERA PARA BROADCAST
+		if fim != 0:
+			print('Destino:',elemento_dest.caminho,elemento_dest.nome,elemento_dest.energia)
+			#route_response()
+			sys.exit()
+		else:
+			broadcast(fila_espera[0],dest) 
 	
 	return
 
@@ -270,7 +311,7 @@ def main():
 	destino = '7'
 	#	----------	 DSR	-------------- 
 	dsr(fonte,destino)
-	print_vertices(vertices_aux)
+	print_vertices(conj_vertices)
 	
 	return
 	
