@@ -42,14 +42,20 @@ broadcast_completo = set()	# Conjunto de nós que já fizeram broadcast
 fila_espera = []	# Fila de espera dos vértices que foram encontrados mas ainda não deram broadcast
 arestas_a_serem_removidas = set() # Arestas a serem removidas, pois já foram visitadas
 fim = 0				# Variável que determina fim do broadcast (route request)
-txt = 0
 
-#	---------- FIM AUX	----------
+
+#	----------	*******	----------
+
+
+def pega_dados():
+	for i in txt:
+		pass	
+	return dados
 
 
 #	----------	FUNÇÕES CLASSE DE VÉRTICES	----------
 
-#	-----	Cria conjunto de todos os vértices, com informação de cabeçalho
+# Cria conjunto de todos os vértices, com informação de cabeçalho
 def cria_vertice(caminho, nome):
 	print('Caminho e nome:',caminho, nome)
 	vertices_aux.append(vertice(caminho,nome))
@@ -87,12 +93,12 @@ def retorna_vertice(no):
 		else:
 			pass
 
-#	----------	FIM VÉRTICES	----------	
+#	----------	*******	----------
 	
 
 			
 #	----------	FUNÇÕES CLASSE ARESTA	----------
-#	-----	Função para printar as arestas durante os testes
+# Função para printar as arestas durante os testes
 def cria_arestas(txt):
 	array = []
 	i = 0
@@ -128,8 +134,9 @@ def remove_arestas_visitadas():
 		arestas_a_serem_removidas.clear()
 	except:
 		pass
-	return		
-#	----------	FIM ARESTAS	----------
+	return	
+		
+#	----------	*******	----------
 
 
 
@@ -179,8 +186,12 @@ def limpa_fila_espera():
 	fila_espera.clear()
 	return
 
-#	----------	************************************	----------
+#	----------	*******	----------
 
+
+
+
+#	----------	DSR	----------
 def broadcast(no_atual,dest):
 	# A disposição dos nós foi implementada na forma de arestas de ligação
 	# Visito as arestas que estão conectadas com meu nó atual
@@ -249,8 +260,8 @@ def broadcast(no_atual,dest):
 	return 
 
 # Transmite a informação
-def aresta_response(z, caminho):
-	elemento = retorna_vertice(z)
+def aresta_response(dest, caminho):
+	elemento = retorna_vertice(dest)
 	elemento.info_response = caminho
 	return	
 	
@@ -260,7 +271,16 @@ def route_response(destino):
 		aresta_response(i,caminho_resposta) # Passo para o vértice o caminho até o destino
 	return	
 
-def dsr(fnt,dest):
+
+def envia_dados(fonte,dados):
+	caminho = fonte.info_response
+	# Posso fazer pra ficar pegando o dado sempre do anterior, pra parecer mais 'real'
+	for i in caminho:
+		elemento = retorna_vertice(i)	# Pego elemento
+		elemento.dado = dados
+	return
+	
+def dsr(fnt,dest,info):
 	# Verifico todos os vizinhos do meu nó fonte e dissemino informação
 	elemento = retorna_vertice(fnt)		 # Pego o elemento da classe vertice que representa o nó, neste caso o nó fonte
 	elemento_dest = retorna_vertice(dest)# Pego o elemento da classe vertice que representa o nó, neste caso o nó destino
@@ -281,11 +301,18 @@ def dsr(fnt,dest):
 	while fila_espera != []:
 		print("Fila de broadcast:",fila_espera) # FILA DE ESPERA PARA BROADCAST
 		broadcast(fila_espera[0],dest)
+	#	----------	*******	----------
 	
 	print_arestas()
 	route_response(elemento_dest)
+	envia_dados(elemento,info)
+	
+	print('Fim do DSR')
+	print_vertices(conj_vertices)
 	
 	return
+	
+#	----------	*******	----------
 
 		
 #	----------	main
@@ -293,7 +320,8 @@ def main():
  
 	txt = open('nos.txt','r').readlines()						# - Abre o arquivo
 	elementos, qtd_vertices, qtd_arestas = cria_arestas(txt)	# - Cria os elementos da classe aresta
-	
+	#dados = pega_dados(txt)
+	dados = 'Hoje vai fazer sol'
 	cria_vertices()												# - Cria todos os vértices
 	
 	#	----------	 INFORMAÇÕES	--------------
@@ -307,9 +335,10 @@ def main():
 	
 	fonte = '1'
 	destino = '7'
-	#	----------	 DSR	-------------- 
-	dsr(fonte,destino)
-	print_vertices(conj_vertices)
+	#	----------	 DSR	--------------
+	
+	dsr(fonte,destino,dados)
+	
 	
 	return
 	
