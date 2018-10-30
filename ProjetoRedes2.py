@@ -12,10 +12,12 @@ import sys
 #	---------- CLASSES	----------  
 #	----	Classe vértice
 class vertice:
-	def __init__(self, caminho, nome, energia):         
-         self.caminho = caminho
-         self.nome = nome
-         self.energia = energia
+	def __init__(self, caminho, nome, energia, info_response,dado):         
+         self.caminho = caminho				# Caminho até si # Informação advinda de um route request
+         self.nome = nome					# Nome do nó
+         self.energia = energia				# Energia do nó
+         self.info_response = info_response	# Informação advinda de um route request
+         self.dado = dado					# Informação advinda de um envio de dados
 
 #	----	Classe aresta
 class aresta:
@@ -40,30 +42,10 @@ broadcast_completo = set()	# Conjunto de nós que já fizeram broadcast
 fila_espera = []	# Fila de espera dos vértices que foram encontrados mas ainda não deram broadcast
 arestas_a_serem_removidas = set() # Arestas a serem removidas, pois já foram visitadas
 fim = 0				# Variável que determina fim do broadcast (route request)
-
+txt = 0
 
 #	---------- FIM AUX	----------
 
-
-#	-----	Função para abrir arquivos e criar o conjunto de arestas	-----
-def abreArquivo():
-	txt = open('nos.txt','r').readlines()
-	array = []
-	i = 0
-	for item in txt:
-		if i == 0:
-			vetor_aux = item.strip('\n').split(' ')
-			qtd_vertices, qtd_arestas= int(vetor_aux[2]),int(vetor_aux[3])
-			i = i + 1
-			pass
-		else:
-			vetor_aux = item.strip('\n').split(' ') 
-			print('Inicio',vetor_aux[1],vetor_aux[2])
-			conj_arestas.append(aresta(vetor_aux[1],vetor_aux[2]))
-			array.append(vetor_aux)	#Removo o \n de cada elemento do array
-	
-	return array, qtd_vertices, qtd_arestas
-	
 
 #	----------	FUNÇÕES CLASSE DE VÉRTICES	----------
 
@@ -81,7 +63,7 @@ def cria_vertices():
 		set_nos.add(item.v)
 	
 	for item in set_nos:
-		conj_vertices.append(vertice([],item, 100))
+		conj_vertices.append(vertice([],item, 100, [], []))
 		
 	print_vertices(conj_vertices)
 	return	
@@ -92,7 +74,7 @@ def print_vertices(vertices):
 	print("Quantidade de vertices:",len(vertices))
 	print("Vertices existentes: \n")
 	for obj in vertices:
-		print(obj.caminho,obj.nome,obj.energia)
+		print(obj.caminho,obj.nome,obj.energia, obj.info_response, obj.dado)
 	
 	print(" ------------------------------ \n")
 	return		
@@ -111,6 +93,23 @@ def retorna_vertice(no):
 			
 #	----------	FUNÇÕES CLASSE ARESTA	----------
 #	-----	Função para printar as arestas durante os testes
+def cria_arestas(txt):
+	array = []
+	i = 0
+	for item in txt:
+		if i == 0:
+			vetor_aux = item.strip('\n').split(' ')
+			qtd_vertices, qtd_arestas= int(vetor_aux[2]),int(vetor_aux[3])
+			i = i + 1
+			pass
+		else:
+			vetor_aux = item.strip('\n').split(' ') 
+			print('Inicio',vetor_aux[1],vetor_aux[2])
+			conj_arestas.append(aresta(vetor_aux[1],vetor_aux[2]))
+			array.append(vetor_aux)	#Removo o \n de cada elemento do array
+
+	return	array, qtd_vertices, qtd_arestas
+
 def print_arestas():
 	print(" ------------------------------ \n")
 	print("Quantidade de arestas:",len(conj_arestas))
@@ -133,13 +132,9 @@ def remove_arestas_visitadas():
 #	----------	FIM ARESTAS	----------
 
 
-# Limpa fila para inundação, pois o destino foi encontrado
-def limpa_fila_espera():
-	fila_espera.clear()
-	return
+
 
 #	----------	FUNÇÕES	----------
-# - Função que cria as arestas para devolver a informação 
 def alert(aux):
 	print("Destino encontrado com caminho:",aux.caminho)
 	fim = 1
@@ -179,10 +174,12 @@ def remove_no_espera(atual):
 		pass
 	return			
 
-
+# Limpa fila para inundação, pois o destino foi encontrado
+def limpa_fila_espera():
+	fila_espera.clear()
+	return
 
 #	----------	************************************	----------
-#nós já são visitados de cara, broadcast é outra coisa
 
 def broadcast(no_atual,dest):
 	# A disposição dos nós foi implementada na forma de arestas de ligação
@@ -199,8 +196,6 @@ def broadcast(no_atual,dest):
 		# Busca arestas vizinhas
 		for i in conj_arestas:
 			# Se o nó já fez broadcast, ignora
-			print(i.u,i.v)
-			print("Nós com broadcast completo:", broadcast_completo)
 			if	i.u  in broadcast_completo:
 				print('O nó',i.u,'já fez broadcast')
 				pass
@@ -243,8 +238,6 @@ def broadcast(no_atual,dest):
 						fila_espera.append(i.u)				# - Adiciona o visitado na fila de espera para BROADCAST
 				
 		broadcast_completo.add(no_atual)
-		
-		print('Fila de espera:',fila_espera)
 				
 		remove_arestas_visitadas()	# - Remove arestas já visitadas	
 		
@@ -254,9 +247,17 @@ def broadcast(no_atual,dest):
 			remove_no_espera(no_atual)	# - Remove nó atual da fila de espera
 	
 	return 
-	
-def route_response():
 
+# Transmite a informação
+def aresta_response(z, caminho):
+	elemento = retorna_vertice(z)
+	elemento.info_response = caminho
+	return	
+	
+def route_response(destino):
+	caminho_resposta = destino.caminho
+	for i in reversed(caminho_resposta[:-1]):
+		aresta_response(i,caminho_resposta) # Passo para o vértice o caminho até o destino
 	return	
 
 def dsr(fnt,dest):
@@ -273,30 +274,27 @@ def dsr(fnt,dest):
 	# O caminho para a fonte é ele mesmo
 	elemento.caminho =	list(elemento.nome)
 	
+	# ------	ROUTE REQUEST	------
 	# Descobre os vizinhos de um nó e encadeia caminho até ele!
 	broadcast(elemento.nome,elemento_dest.nome)
-	
 	# Enquanto a fila de espera para BROADCAST
 	while fila_espera != []:
-		print("Ainda falta:",fila_espera) # FILA DE ESPERA PARA BROADCAST
-		if fim != 0:
-			print('Destino:',elemento_dest.caminho,elemento_dest.nome,elemento_dest.energia)
-			#route_response()
-			sys.exit()
-		else:
-			broadcast(fila_espera[0],dest) 
+		print("Fila de broadcast:",fila_espera) # FILA DE ESPERA PARA BROADCAST
+		broadcast(fila_espera[0],dest)
+	
+	print_arestas()
+	route_response(elemento_dest)
 	
 	return
 
 		
 #	----------	main
 def main():
-
-	# - Abre o arquivo e cria os elementos da classe aresta
-	elementos, qtd_vertices, qtd_arestas = abreArquivo()
+ 
+	txt = open('nos.txt','r').readlines()						# - Abre o arquivo
+	elementos, qtd_vertices, qtd_arestas = cria_arestas(txt)	# - Cria os elementos da classe aresta
 	
-	# - Cria todos os vértices
-	cria_vertices()
+	cria_vertices()												# - Cria todos os vértices
 	
 	#	----------	 INFORMAÇÕES	--------------
 	print("	----- INFORMAÇÕES ----- \n")
