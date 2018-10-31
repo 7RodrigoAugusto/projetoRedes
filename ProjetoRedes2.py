@@ -9,17 +9,18 @@ import random
 import sys
 
 
-#	---------- CLASSES	----------  
-#	----	Classe vértice
+#	---------- CLASSES	---------- 
+ 
+# Classe vértice
 class vertice:
-	def __init__(self, caminho, nome, energia, info_response,dado):         
+	def __init__(self, caminho, nome, energia, info_response, dado, alcanca):         
          self.caminho = caminho				# Caminho até si # Informação advinda de um route request
          self.nome = nome					# Nome do nó
          self.energia = energia				# Energia do nó
          self.info_response = info_response	# Informação advinda de um route request
          self.dado = dado					# Informação advinda de um envio de dados
-
-#	----	Classe aresta
+         self.alcanca = alcanca
+# Classe aresta
 class aresta:
      def __init__(self, u, v):
      	# Vértices
@@ -29,7 +30,8 @@ class aresta:
 #	---------- FIM CLASSES	----------       
 
 
-#	---------- Variáveis aux.	----------    
+#	---------- Variáveis aux.	----------
+    
 conj_arestas = []	#	-----	Conjunto que contém todas as arestas	-----    
 conj_vertices = []	#	-----	Conjunto inicial de vértices	-----
 
@@ -43,15 +45,7 @@ fila_espera = []	# Fila de espera dos vértices que foram encontrados mas ainda 
 arestas_a_serem_removidas = set() # Arestas a serem removidas, pois já foram visitadas
 fim = 0				# Variável que determina fim do broadcast (route request)
 
-
 #	----------	*******	----------
-
-
-def pega_dados():
-	for i in txt:
-		pass	
-	return dados
-
 
 #	----------	FUNÇÕES CLASSE DE VÉRTICES	----------
 
@@ -69,20 +63,19 @@ def cria_vertices():
 		set_nos.add(item.v)
 	
 	for item in set_nos:
-		conj_vertices.append(vertice([],item, 100, [], []))
+		conj_vertices.append(vertice([],item, 100, [], [], set()))
 		
 	print_vertices(conj_vertices)
 	return	
 
 # Print da lista de elementos da classe vértice	
 def print_vertices(vertices):
-	print(" ------------------------------ \n")
+	print("\t-----\t \n")
 	print("Quantidade de vertices:",len(vertices))
 	print("Vertices existentes: \n")
 	for obj in vertices:
-		print('Nome do nó:',obj.nome,'\t Caminho:',obj.caminho,'\t Energia:',obj.energia,'\t Caminho response:',obj.info_response,'\t Informação:', obj.dado)
-	
-	print(" ------------------------------ \n")
+		print('Nome do nó:',obj.nome,'\t Caminho:',obj.caminho,'\t Energia:',obj.energia,'\t Caminho response:',obj.info_response,'\t Informação:', obj.dado,'\t Alcança:', obj.alcanca)
+	print("\t-----\t \n")
 	return		
 
 # Retorna pelo nome do nó, o seu elemento na classe vértice	
@@ -93,11 +86,39 @@ def retorna_vertice(no):
 		else:
 			pass
 
+# Função que mapeia cada elemento, funciona como o "sinal" que entra no range dos elementos.
+def mapeia_vertices():
+	for item in conj_arestas:
+		print(item.u,item.v)
+		# Pego elementos vértices para adicionar os alcançáveis de cada 
+		i = retorna_vertice(item.u)
+		j = retorna_vertice(item.v)
+		
+		if i.alcanca is None:
+			conj_range = set()	
+			conj_range.add(item.v)
+			i.alcanca = conj_range
+		else:
+			conj_range = i.alcanca
+			conj_range.add(item.v)
+			i.alcanca = conj_range
+			
+		if j.alcanca is None:
+			conj_range = set()	
+			conj_range.add(item.u)
+			j.alcanca = conj_range
+		else:
+			conj_range = j.alcanca
+			conj_range.add(item.u)
+			j.alcanca = conj_range	
+	
+	return
+		
 #	----------	*******	----------
 	
-
-			
+		
 #	----------	FUNÇÕES CLASSE ARESTA	----------
+
 # Função para printar as arestas durante os testes
 def cria_arestas(txt):
 	array = []
@@ -110,7 +131,6 @@ def cria_arestas(txt):
 			pass
 		else:
 			vetor_aux = item.strip('\n').split(' ') 
-			print('Inicio',vetor_aux[1],vetor_aux[2])
 			conj_arestas.append(aresta(vetor_aux[1],vetor_aux[2]))
 			array.append(vetor_aux)	#Removo o \n de cada elemento do array
 
@@ -125,23 +145,12 @@ def print_arestas():
 	
 	print(" ------------------------------ \n")
 	return	
-
-def remove_arestas_visitadas():
-	# Remove arestas já visitadas	
-	try:
-		for k in arestas_a_serem_removidas:
-			conj_arestas.remove(k)
-		arestas_a_serem_removidas.clear()
-	except:
-		pass
-	return	
-		
+	
 #	----------	*******	----------
 
 
-
-
 #	----------	FUNÇÕES	----------
+
 def alert(aux):
 	print("Destino encontrado com caminho:",aux.caminho)
 	fim = 1
@@ -186,112 +195,22 @@ def limpa_fila_espera():
 	fila_espera.clear()
 	return
 
-
 # Energia é consumida em broadcast, route response e envio de dados
 def remove_energia(atual):
 	atual = retorna_vertice(atual)
 	atual.energia = atual.energia - 10
-	
+	# Se energia chegou a zero, então removo nó do alcance de todos
+	#if atual.energia == 0:
+	#	for i in conj_vertices:
+	return
+
 #	----------	*******	----------
 
 
-
-
 #	----------	DSR	----------
-def broadcast(no_atual,dest):
-	# A disposição dos nós foi implementada na forma de arestas de ligação
-	# Visito as arestas que estão conectadas com meu nó atual
-	print('Nós visitados:', visitados)
-	print("Nós com broadcast completo:", broadcast_completo)
-	
-	# Se a aresta destino for a mesma, fim!
-	if no_atual == dest:
-			aux = []
-			aux.append(dic_rota[no_atual])
-			alert(aux)
-	else:
-		# Busca arestas vizinhas
-		for i in conj_arestas:
-			# Se o nó já fez broadcast, ignora
-			if	i.u  in broadcast_completo:
-				print('O nó',i.u,'já fez broadcast')
-				pass
-			elif i.v in broadcast_completo:
-				print('O nó',i.v,' já fez broadcast')
-				pass
-			else:
-				# Se for o nó do momento e o destino, destino encontrado
-				if no_atual == i.v and dest == i.u:		
-					encadeia(no_atual,i.u)
-					elemento_final = retorna_vertice(i.u)
-					alert(elemento_final)
-					return
-					
-				# Se for nó do momento e o destino, destino encontrado	
-				if no_atual== i.u and dest == i.v:				
-					encadeia(no_atual,i.v)
-					elemento_final = retorna_vertice(i.v)
-					alert(elemento_final)
-					return
-					
-				# Se for o nó atual, descobre os vizinhos, e encadeia cabeçalho	
-				if no_atual == i.u:
-					if i.v in visitados:
-						pass
-					else:
-						encadeia(no_atual,i.v)
-						arestas_a_serem_removidas.add(i)	# - Adiciona a aresta, no conjunto de arestas a serem removidas
-						visitados.add(i.v)					# - Adiciona o nó que eu encontro, do meu atual, aos visitados
-						fila_espera.append(i.v)				# - Adiciona o visitado na fila de espera para BROADCAST
-					
-				# Se for o nó atual, descobre os vizinhos, e encadeia cabeçalho		
-				if no_atual == i.v:
-					if i.u in visitados:
-						pass
-					else:	
-						encadeia(no_atual,i.u)
-						arestas_a_serem_removidas.add(i)	# - Adiciona a aresta, no conjunto de arestas a serem removidas
-						visitados.add(i.u)					# - Adiciona o nó que eu encontro, do meu atual, aos visitados
-						fila_espera.append(i.u)				# - Adiciona o visitado na fila de espera para BROADCAST
-		
-		# Diminui energia
-		remove_energia(no_atual)		
-		broadcast_completo.add(no_atual)
-				
-		remove_arestas_visitadas()	# - Remove arestas já visitadas	
-		
-		print('Dicionario:',dic_rota)
-		# O primeiro nó nunca esteve na fila de espera
-		if no_atual in fila_espera:
-			remove_no_espera(no_atual)	# - Remove nó atual da fila de espera
-	
-	return 
 
-# Transmite a informação
-def aresta_response(dest, caminho):
-	elemento = retorna_vertice(dest)
-	elemento.info_response = caminho
-	return	
-	
-def route_response(destino):
-	caminho_resposta = destino.caminho
-	for i in reversed(caminho_resposta[:-1]):
-		remove_energia(i)
-		aresta_response(i,caminho_resposta) # Passo para o vértice o caminho até o destino
-	return	
-
-
-def envia_dados(fonte,dados):
-	caminho = fonte.info_response
-	# Posso fazer pra ficar pegando o dado sempre do anterior, pra parecer mais 'real'
-	for i in caminho:
-		remove_energia(i)
-		elemento = retorna_vertice(i)	# Pego elemento
-		elemento.dado = dados
-	return
-	
+# Verifico todos os vizinhos do meu nó fonte e dissemino informação
 def dsr(fnt,dest,info):
-	# Verifico todos os vizinhos do meu nó fonte e dissemino informação
 	elemento = retorna_vertice(fnt)		 # Pego o elemento da classe vertice que representa o nó, neste caso o nó fonte
 	elemento_dest = retorna_vertice(dest)# Pego o elemento da classe vertice que representa o nó, neste caso o nó destino
 	
@@ -305,59 +224,134 @@ def dsr(fnt,dest,info):
 	elemento.caminho =	list(elemento.nome)
 	elemento.dado = info
 	
-	print("Inicializando o Route Request")
+	print("\tInicializando o Route Request")
 	# ------	ROUTE REQUEST	------
-	# Descobre os vizinhos de um nó e encadeia caminho até ele!
+	# Encadeia caminho até os vizinhos de um nó
 	broadcast(elemento.nome,elemento_dest.nome)
 	# Enquanto a fila de espera para BROADCAST
 	while fila_espera != []:
 		print("Fila de broadcast:",fila_espera) # FILA DE ESPERA PARA BROADCAST
 		broadcast(fila_espera[0],dest)
 	#	----------	*******	----------
-	print("Fim do Route Request")
+	print("\tFim do Route Request\n")
 	
-	print("Inicializando o Route Response")
+	print("\tInformação antes do Route Response \n")
 	print_vertices(conj_vertices)
+	print("\tInicializando o Route Response \n")
 	route_response(elemento_dest)
-	print("Fim do Route Response")
+	print("\tFim do Route Response \n")
 	
-	print("Inicializando o envio de dados")
+	print("\tInformação antes do Envio de dados \n")
 	print_vertices(conj_vertices)
+	print("\tInicializando o envio de dados \n")
 	envia_dados(elemento,info)
-	print("Fim do envio de dados")
+	print("\tFim do envio de dados \n")
 	
-	print('Fim do DSR')
-	print_vertices(conj_vertices)
+	return
+
+# BROADCAST entre vizinhos, faz parte do contexto ROUTE REQUEST
+def broadcast(no_atual,dest):
+	# A disposição dos nós foi implementada na forma de arestas de ligação
+	# Visito as arestas que estão conectadas com meu nó atual
+	print('Nós visitados:', visitados)
+	print("Nós com broadcast completo:", broadcast_completo)
 	
+	# Se a aresta destino for a mesma, fim!
+	if no_atual == dest:
+			aux = []
+			aux.append(dic_rota[no_atual])
+			alert(aux)
+	else:
+		# Começa buscando vizinhos da fonte
+		elemento_aux = retorna_vertice(no_atual) # Pego o elemento que corresponde ao vértice
+		for i in elemento_aux.alcanca:
+			# Se o nó já fez broadcast, ignora
+			if	i  in broadcast_completo:
+				pass
+			else:
+				# Se for o destino, então destino encontrado
+				if dest == i:		
+					encadeia(no_atual,i)
+					elemento_final = retorna_vertice(i)
+					alert(elemento_final)
+					return
+				if i in visitados:
+					pass
+					
+				else:
+					encadeia(no_atual,i)
+					arestas_a_serem_removidas.add(i)	# - Adiciona a aresta, no conjunto de arestas a serem removidas
+					visitados.add(i)					# - Adiciona o nó que eu encontro, do meu atual, aos visitados
+					fila_espera.append(i)				# - Adiciona o visitado na fila de espera para BROADCAST
+					
+		# Diminui energia
+		remove_energia(no_atual)		
+		broadcast_completo.add(no_atual)
+				
+		print('Dicionario:',dic_rota)
+		# O primeiro nó nunca esteve na fila de espera
+		if no_atual in fila_espera:
+			remove_no_espera(no_atual)	# - Remove nó atual da fila de espera
+	
+	return 
+
+# ROUTE RESPONSE em conjunto com  ARESTA RESPONSE transmite a informação do "Caminho response"
+def route_response(destino):
+	caminho_resposta = destino.caminho
+	for i in reversed(caminho_resposta[:-1]):
+		# Diminui energia
+		remove_energia(i)
+		aresta_response(i,caminho_resposta) # Passo para o vértice o caminho até o destino
+	return	
+	
+def aresta_response(dest, caminho):
+	elemento = retorna_vertice(dest)
+	elemento.info_response = caminho
+	return	
+	
+# ENVIA DADOS, repassa a informação pelo "Caminho response" aprendido
+def envia_dados(fonte,dados):
+	caminho = fonte.info_response
+	# Posso fazer pra ficar pegando o dado sempre do anterior, pra parecer mais 'real'
+	for i in caminho:
+		# Diminui energia
+		remove_energia(i)
+		elemento = retorna_vertice(i)	# Pego elemento
+		elemento.dado = dados
 	return
 	
 #	----------	*******	----------
 
-		
-#	----------	main
+#	----------	MAIN	----------
 def main():
  
 	txt = open('nos.txt','r').readlines()						# - Abre o arquivo
-	elementos, qtd_vertices, qtd_arestas = cria_arestas(txt)	# - Cria os elementos da classe aresta
-	#dados = pega_dados(txt)
+	elementos, qtd_vertices, qtd_arestas = cria_arestas(txt)	# - Cria os elementos da classe aresta, para que o mapeamento dos vizinhos seja feito
 	dados = 'Hoje vai fazer sol'
 	cria_vertices()												# - Cria todos os vértices
+	print('\tMapeia vértices\n')
+	mapeia_vertices()											# - Mapeia vizinhos
+	
+	print('\nVértices com sua informação inicial de quem percebe quem na rede:')
+	print_vertices(conj_vertices)
 	
 	#	----------	 INFORMAÇÕES	--------------
-	print("	----- INFORMAÇÕES ----- \n")
-	print("Quantidade inicial de vértices(nós): \n",qtd_vertices)
-	print("Inicialmente temos:",len(conj_arestas),"arestas\n")
-	
-	# - Apresenta o conjunto de arestas atual
-	print_arestas()	
+	print("\tINFORMAÇÕES\t\n")
+	print("Quantidade de vértices(nós): ",qtd_vertices)
 	#	----------	FIM INFORMAÇÕES	--------------
 	
 	fonte = '1'
 	destino = '7'
 	#	----------	 DSR	--------------
 	
-	dsr(fonte,destino,dados)
+	# PRECISO DECICDIR EM QUAL MOMENTO EU TESTO A ENERGIA, ACREDITO QUE SEMPRE
 	
+	print('\tDSR\n')
+	dsr(fonte,destino,dados)
+	print('\tFim DSR\n')
+	
+	print('\tResultado:\n')
+	print_vertices(conj_vertices)
 	
 	return
 	
