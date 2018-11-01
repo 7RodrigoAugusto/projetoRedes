@@ -228,7 +228,23 @@ def remove_energia(atual):
 #	----------	*******	----------
 
 
-#	----------	DSR	----------
+#	----------	Conexão{ DSR{BROADCAST(T1) - RESPONSE(T2) - ENVIO DE DADOS(T3)} }	----------
+def conecta(fonte,destino,dados,num_sequencia):
+	teste_cache = ProcuraNaCache(fonte,destino)
+	print('\tDSR\n')
+	if teste_cache == False:
+		dsr(fonte,destino,dados,num_sequencia)
+	else:
+		print('Já tenho informação na cache')
+		fonte = retorna_vertice(fonte)
+		envia_dados(fonte,dados)	
+	
+	
+	print('\tFim DSR\n')	
+	print('\tResultado:\n')
+	print_vertices(conj_vertices)
+	limpa_tudo()	# Limpo número de sequência também
+	return		
 
 # Verifico todos os vizinhos do meu nó fonte e dissemino informação
 def dsr(fnt,dest,info,n_seq):
@@ -366,7 +382,6 @@ def aresta_response(dest, caminho):
 	
 # ENVIA DADOS, repassa a informação pelo "Caminho response" aprendido
 def envia_dados(fonte,dados):
-	print('Fonte:',fonte.nome)
 	caminho = fonte.cache[-1]	# Pego a última informação que foi adicionada ao meu cache
 	# Posso fazer pra ficar pegando o dado sempre do anterior, pra parecer mais 'real'
 	for i in caminho:
@@ -383,7 +398,6 @@ def main():
  
 	txt = open('nos.txt','r').readlines()						# - Abre o arquivo
 	elementos, qtd_vertices, qtd_arestas = cria_arestas(txt)	# - Cria os elementos da classe aresta, para que o mapeamento dos vizinhos seja feito
-	dados = 'Hoje vai fazer sol'
 	cria_vertices()												# - Cria todos os vértices
 	print('\tMapeia vértices\n')
 	mapeia_vertices()											# - Mapeia vizinhos
@@ -396,52 +410,23 @@ def main():
 	print("Quantidade de vértices(nós): ",qtd_vertices)
 	#	----------	FIM INFORMAÇÕES	--------------
 	
+	dados = 'Hoje vai fazer sol'
 	fonte = '1'
 	destino = '7'
 	num_sequencia = 'T1'
-	# procura_na_cache()
-	#	----------	 DSR	--------------
 	
-	# PRECISO DECICDIR EM QUAL MOMENTO EU TESTO A ENERGIA, ACREDITO QUE SEMPRE
-	
-	print('\tDSR\n')
-	dsr(fonte,destino,dados,num_sequencia)
-	print('\tFim DSR\n')
-	
-	print('\tResultado:\n')
-	print_vertices(conj_vertices)
-	
-	limpa_tudo()
-	# Limpo número de sequência também
-	
+	#	----------	 Conecta	--------------
+	conecta(fonte,destino,dados,num_sequencia)
+		
 	dados = "Deu certo"
 	fonte = '1'
 	destino = '6'
 	num_sequencia ='T2'
 	
-	teste = ProcuraNaCache(fonte,destino)
-	if teste == False:
-		dsr(fonte,destino,dados,num_sequencia)
-	else:
-		fonte = retorna_vertice(fonte)
-		envia_dados(fonte,dados)
+	conecta(fonte,destino,dados,num_sequencia)
 	
-	print_vertices(conj_vertices)
+	
 
-	dados = "Deu certo 2"
-	fonte = '2'
-	destino = '9'
-	num_sequencia ='T3'
-	
-	teste = ProcuraNaCache(fonte,destino)
-	if teste == False:
-		dsr(fonte,destino,dados,num_sequencia)
-	else:
-		fonte = retorna_vertice(fonte)
-		envia_dados(fonte,dados)
-	
-	print_vertices(conj_vertices)
-	
 	
 	return
 	
