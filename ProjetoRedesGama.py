@@ -236,8 +236,8 @@ def dsr(fnt,dest,info,n_seq):
 	elemento_dest = retorna_vertice(dest)# Pego o elemento da classe vertice que representa o nó, neste caso o nó destino
 	
 	# Print informações iniciais da inundação
-	print("Fonte:",elemento.caminho,elemento.nome,elemento.energia)
-	print("Destino:",elemento_dest.caminho,elemento_dest.nome,elemento_dest.energia)
+	print("Fonte:",elemento.nome,elemento.energia)
+	print("Destino:",elemento_dest.nome,elemento_dest.energia)
 	print("Número de sequência do broadcast:",n_seq)
 	
 	# Crio dicionário do meu nó fonte
