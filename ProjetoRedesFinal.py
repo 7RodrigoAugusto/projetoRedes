@@ -90,12 +90,11 @@ def cria_vertices():
 
 # Print da lista de elementos da classe vértice	
 def print_vertices(vertices):
-	print("\t-----\t \n")
 	print("Quantidade de vertices:",len(vertices))
-	print("Vertices existentes: \n")
+	print("Vertices existentes:")
 	for obj in vertices:
-		print('Nome do nó:',obj.nome,'\tNúmero de sequência',obj.num_sequencia,'\t Caminho:',obj.caminho,'\t Energia:',obj.energia,'\t Caminho response:',obj.cache,'\t Informação:', obj.dado,'\t Alcança:', obj.alcanca)
-	print("\t-----\t \n")
+		print('Nome do nó:',obj.nome,'\tNúmero de sequência',obj.num_sequencia,'\t Energia:',obj.energia,'\t Caminho response:',obj.cache,'\t Informação:', obj.dado,'\t Alcança:', obj.alcanca)
+	print('\n')
 	return		
 
 # Retorna pelo nome do nó, o seu elemento na classe vértice	
@@ -229,11 +228,11 @@ def remove_energia(atual):
 
 
 #	----------	Conexão{ DSR{BROADCAST(T1) - RESPONSE(T2) - ENVIO DE DADOS(T3)} }	----------
-def conecta(fonte,destino,dados,num_sequencia):
+def conecta(fonte,destino,dados):
 	teste_cache = ProcuraNaCache(fonte,destino)
 	print('\tDSR\n')
 	if teste_cache == False:
-		dsr(fonte,destino,dados,num_sequencia)
+		dsr(fonte,destino,dados)
 	else:
 		print('Já tenho informação na cache')
 		fonte = retorna_vertice(fonte)
@@ -247,80 +246,64 @@ def conecta(fonte,destino,dados,num_sequencia):
 	return		
 
 # Verifico todos os vizinhos do meu nó fonte e dissemino informação
-def dsr(fnt,dest,info,n_seq):
-	elemento = retorna_vertice(fnt)		 # Pego o elemento da classe vertice que representa o nó, neste caso o nó fonte
-	elemento_dest = retorna_vertice(dest)# Pego o elemento da classe vertice que representa o nó, neste caso o nó destino
+def dsr(fnt,dest,info):
+	elemento = retorna_vertice(fnt)		 			# Pego o elemento da classe vertice que representa o nó, neste caso o nó fonte
+	elemento_dest = retorna_vertice(dest)			# Pego o elemento da classe vertice que representa o nó, neste caso o nó destino
 	
-	# Print informações iniciais da inundação
-	print("Fonte:",elemento.nome,elemento.energia)
-	print("Destino:",elemento_dest.nome,elemento_dest.energia)
-	print("Número de sequência do broadcast:",n_seq)
+													# Print informações iniciais da inundação
+	print("Fonte:",elemento.nome)
+	print("Destino:",elemento_dest.nome)
 	
-	# Crio dicionário do meu nó fonte
+													# Crio dicionário do meu nó fonte
 	dic_rota[elemento.nome] = elemento.nome
-	# O caminho para a fonte é ele mesmo
+													# O caminho para a fonte é ele mesmo
 	elemento.caminho =	list(elemento.nome)
 	elemento.dado = info
-	elemento.num_sequencia = n_seq
 	
 	print("\tInicializando o Route Request")
 	# ------	ROUTE REQUEST	------
-	# Encadeia caminho até os vizinhos de um nó
-	broadcast(elemento.nome,elemento_dest.nome)
-	# Enquanto a fila de espera para BROADCAST
+													# Encadeia caminho até os vizinhos de um nó
+	route_request(elemento.nome,elemento_dest.nome)
+													# Enquanto a fila de espera para route_request
 	while fila_espera != []:
-		print("Fila de broadcast:",fila_espera) # FILA DE ESPERA PARA BROADCAST
+		print("Fila de broadcast:",fila_espera) 	# Fila de espera para route_request
 		aux = fila_espera[0] 
-		# Adiciona num. de sequência antes de fazer broadcast
 		aux = retorna_vertice(aux)
-		aux.num_sequencia = n_seq
-		broadcast(fila_espera[0],dest)
+		route_request(fila_espera[0],dest)
 	
 	#	----------	*******	----------
-	print("\tFim do Route Request\n")
+	print("\n\tFim do Route Request\n")
 	
-	# NÃO DEVO FICAR PASSANDO FONTE E DESTINO, ROUTE REQUEST ME ENVIA INFO DO DESTINO E ASSIM SUCESSIVAMENTE
-	
-	# DEVO LIMPAR INFORMAÇÃO DE NUM SEQUENCIA
-	print("\tInformação antes do Route Response \n")
-	print_vertices(conj_vertices)
-	print("\tInicializando o Route Response \n")
 	route_response(elemento_dest,elemento)	
-	print("\tFim do Route Response \n")
 	
-	
-	# O destino não necessariamente vai ser o final da cache, pode ser outra coisa
-	print("\tInformação antes do Envio de dados \n")
-	print_vertices(conj_vertices)
-	print("\tInicializando o envio de dados \n")
 	envia_dados(elemento,info)
-	print("\tFim do envio de dados \n")
 	
 	return
 
-# BROADCAST entre vizinhos, faz parte do contexto ROUTE REQUEST
-def broadcast(no_atual,dest):
-	# A disposição dos nós foi implementada na forma de arestas de ligação
-	# Visito as arestas que estão conectadas com meu nó atual
-	print('Nós visitados:', visitados)
-	
-	# Se o nó atual for igual ao destino, fim
+# Route request entre vizinhos, faz parte do contexto ROUTE REQUEST
+def route_request(no_atual,dest):
+											 # A disposição dos nós foi implementada na forma de arestas de ligação
+											 # Visito as arestas que estão conectadas com meu nó atual
+	elemento_aux = retorna_vertice(no_atual) # Pego o elemento que corresponde ao vértice
+	elemento_aux.num_sequencia = 'T1'		 # Adiciona num. de sequência antes de fazer broadcast
+	print('Nó atual fazendo broadcast:',elemento_aux.nome)	
+	   									     # Se o nó atual for igual ao destino, fim
 	if no_atual == dest:
 			aux = []
 			aux.append(dic_rota[no_atual])
 			alert(aux)
 	else:
-		# Começa buscando vizinhos da fonte
-		elemento_aux = retorna_vertice(no_atual) # Pego o elemento que corresponde ao vértice
+											 # Começa buscando vizinhos da fonte
 		for i in elemento_aux.alcanca:
 			i_aux = retorna_vertice(i)
-			# Se o nó já fez broadcast, ignora. Para isso testo o número de sequência do broadcast
+											 # Se o nó já fez broadcast, ignora. Para isso testo o número de sequência do broadcast
 			if	i_aux.num_sequencia  == elemento_aux.num_sequencia:
-				print('Já foi visitado:',i_aux.nome,i_aux.num_sequencia)
+				print('Já foi visitado:',i_aux.nome,'Num. Sequência:',i_aux.num_sequencia)
 				pass
 			else:
-				# Se for o destino, então destino encontrado
-				if dest == i:		
+											 # Se for o destino, então destino encontrado
+				if dest == i:	
+					print('Sou o nó destino:',dest)
 					encadeia(no_atual,i)
 					elemento_final = retorna_vertice(i)
 					elemento_final.num_sequencia = elemento_aux.num_sequencia
@@ -329,23 +312,22 @@ def broadcast(no_atual,dest):
 				if i in visitados:
 					pass
 				else:
+					print('Farei broadcast em:',i)
 					encadeia(no_atual,i)
-					visitados.add(i)					# - Adiciona o nó que eu encontro, do meu atual, aos visitados
-					fila_espera.append(i)				# - Adiciona o visitado na fila de espera para BROADCAST
+					visitados.add(i)		 # - Adiciona o nó que eu encontro, do meu atual, aos visitados
+					fila_espera.append(i)	 # - Adiciona o visitado na fila de espera para BROADCAST
 					
-		# Diminui energia
-		remove_energia(no_atual)
-				
-		print('Dicionario:',dic_rota)
-		
-		# O primeiro nó nunca esteve na fila de espera
+											 # Diminui energia
+		remove_energia(no_atual)	
+											 # O primeiro nó nunca esteve na fila de espera
 		if no_atual in fila_espera:
-			remove_no_espera(no_atual)	# - Remove nó atual da fila de espera
+			remove_no_espera(no_atual)	     # - Remove nó atual da fila de espera
 	
 	return 
 
 # ROUTE RESPONSE em conjunto com  ARESTA RESPONSE transmite a informação do "Caminho response"
 def route_response(destino,fonte):
+	print("\tInicializando o Route Response \n")
 	caminho_resposta = destino.caminho
 	
 	print('Caminho de resposta:',destino.caminho)
@@ -355,14 +337,15 @@ def route_response(destino,fonte):
 	
 	# Broadcast de resposta
 	while no_atual != fonte:
-		print('No atual momento:',no_atual.nome)
+		print('Nó atual momento:',no_atual.nome)
 		near = no_atual.alcanca				# Vizinhos do meu nó atual
+		print('Vizinhos:',near)
 		# Faço um for de todos os meus nós vizinhos
 		for item in near:					# Checo vizinhos ao meu nó atual
 			item = retorna_vertice(item)	# Pego o elemento do meu vizinho
 			print('Testando nó:',item.nome)
 			if	item.num_sequencia  == no_atual.num_sequencia:
-				print('Já foi visitado:',item.nome,item.num_sequencia)
+				print('Já foi visitado:',item.nome,'Num. Sequência:',item.num_sequencia)
 				pass
 			else:
 				# Para cada um deles faço uma função que testa se aquela informação é realmente pra ele
@@ -375,12 +358,12 @@ def route_response(destino,fonte):
 					no_atual = item
 					print('Novo nó atual:',no_atual.nome)
 				else:
-					print(item.nome)
-					print('Não faço parte do caminho')
+					print('Não faço parte do caminho:',item.nome)
 	
 	remove_energia(no_atual.nome)
 	aresta_response(no_atual.nome,caminho_resposta)
 	
+	print("\n\tFim do Route Response \n")
 	return	
 	
 def aresta_response(dest, caminho):
@@ -392,8 +375,8 @@ def aresta_response(dest, caminho):
 	
 # ENVIA DADOS, repassa a informação pelo "Caminho response" aprendido
 def envia_dados(fonte,dados):
-	print(fonte.nome,fonte.num_sequencia)
-	
+	print("\tInicializando o envio de dados \n")
+	print_vertices(conj_vertices)
 	caminho = fonte.cache[-1]	# Pego a última informação que foi adicionada ao meu cache
 	no_atual = fonte
 	no_atual.num_sequencia = 'T3'	# Atualizo num. sequencia, pois agora envio os dados
@@ -402,14 +385,15 @@ def envia_dados(fonte,dados):
 	
 	# Broadcast de dados
 	while no_atual != destino:
-		print('No atual momento:',no_atual.nome)
+		print('Nó atual momento:',no_atual.nome)
 		near = no_atual.alcanca				# Vizinhos do meu nó atual
+		print('Vizinhos:',near)
 		# Faço um for de todos os meus nós vizinhos
 		for item in near:					# Checo vizinhos ao meu nó atual
 			item = retorna_vertice(item)	# Pego o elemento do meu vizinho
 			print('Testando nó:',item.nome)
 			if	item.num_sequencia  == no_atual.num_sequencia:
-				print('Já foi visitado:',item.nome,item.num_sequencia)
+				print('Já foi visitado:',item.nome,'Num. Sequência:',item.num_sequencia)
 				pass
 			else:
 				# Para cada um deles faço uma função que testa se aquela informação é realmente pra ele
@@ -422,9 +406,10 @@ def envia_dados(fonte,dados):
 					print('Novo nó atual:',no_atual.nome)
 					break
 				else:
-					print(item.nome)
-					print('Não faço parte do caminho')
+					print('Não faço parte do caminho:',item.nome)
+		
 	
+	print("\n\tFim do envio de dados \n")
 	print_vertices(conj_vertices)
 	return
 	
@@ -434,6 +419,7 @@ def envia_dados(fonte,dados):
 def main():
  
 	txt = open('nos.txt','r').readlines()						# - Abre o arquivo
+	print('\tInicio')
 	elementos, qtd_vertices, qtd_arestas = cria_arestas(txt)	# - Cria os elementos da classe aresta, para que o mapeamento dos vizinhos seja feito
 	cria_vertices()												# - Cria todos os vértices
 	print('\tMapeia vértices\n')
@@ -450,16 +436,14 @@ def main():
 	dados = 'Hoje vai fazer sol'
 	fonte = '1'
 	destino = '7'
-	num_sequencia = 'T1'
 	
 	#	----------	 Conecta	--------------
-	conecta(fonte,destino,dados,num_sequencia)
+	conecta(fonte,destino,dados)
 		
 	#dados = "Deu certo"
 	#fonte = '1'
 	#destino = '6'
-	#num_sequencia ='T2'	
-	#conecta(fonte,destino,dados,num_sequencia)
+	#conecta(fonte,destino,dados)
 	
 	
 
