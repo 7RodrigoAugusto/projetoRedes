@@ -1,5 +1,5 @@
 #	----	Projeto Final Redes	----
-#	 Rodrigo Augusto Vasconcelos Sarmento - 11218021
+#	 Rodrigo Augusto Vasconcelos Sarmento
 #	 Yuri Oliveira
 #	----						----	
 
@@ -43,14 +43,22 @@ visitados = set()	# Variável que funciona para marcar os vértices já visitado
 fila_espera = []	# Fila de espera dos vértices que foram encontrados mas ainda não deram broadcast
 fim = 0				# Variável que determina fim do broadcast (route request)
 
+# Funções de limpeza
 def limpa_tudo():
 	dic_rota = {}		# A chave é o vértice, a informação é uma lista com a rota até ele
 	visitados = set()	# Variável que funciona para marcar os vértices já visitados
 	fila_espera = []	# Fila de espera dos vértices que foram encontrados mas ainda não deram broadcast
 	fim = 0				# Variável que determina fim do broadcast (route request)
+	limpa_sequencias()
 	return
 
-#procura se o destino esta na cache do nó fonte
+def limpa_sequencias():
+	for item in conj_vertices:
+		item.num_sequencia = 'T0'
+	return 	
+	
+
+# Procura se o destino esta na cache do nó fonte
 def ProcuraNaCache(fonte, destino): 
 	fonte = retorna_vertice(fonte)
 	destino = retorna_vertice(destino)
@@ -83,7 +91,7 @@ def cria_vertices():
 		set_nos.add(item.v)
 	
 	for item in set_nos:		#caminho, nome, energia, cache, dado, alcanca, nm_sequencia
-		conj_vertices.append(vertice([],item, 100, [[]], [], set(),0))
+		conj_vertices.append(vertice([],item, 100, [[]], [], set(),'T0'))
 		
 	print_vertices(conj_vertices)
 	return	
@@ -377,18 +385,18 @@ def aresta_response(dest, caminho):
 def envia_dados(fonte,dados):
 	print("\tInicializando o envio de dados \n")
 	print_vertices(conj_vertices)
-	caminho = fonte.cache[-1]	# Pego a última informação que foi adicionada ao meu cache
+	caminho = fonte.cache[-1]				# Pego a última informação que foi adicionada ao meu cache
 	no_atual = fonte
-	no_atual.num_sequencia = 'T3'	# Atualizo num. sequencia, pois agora envio os dados
+	no_atual.num_sequencia = 'T3'			# Atualizo num. sequencia, pois agora envio os dados
 	destino = caminho[-1]
 	destino = retorna_vertice(destino)
 	
-	# Broadcast de dados
+											# Broadcast de dados
 	while no_atual != destino:
 		print('Nó atual momento:',no_atual.nome)
 		near = no_atual.alcanca				# Vizinhos do meu nó atual
 		print('Vizinhos:',near)
-		# Faço um for de todos os meus nós vizinhos
+											# Faço um for de todos os meus nós vizinhos
 		for item in near:					# Checo vizinhos ao meu nó atual
 			item = retorna_vertice(item)	# Pego o elemento do meu vizinho
 			print('Testando nó:',item.nome)
@@ -396,8 +404,8 @@ def envia_dados(fonte,dados):
 				print('Já foi visitado:',item.nome,'Num. Sequência:',item.num_sequencia)
 				pass
 			else:
-				# Para cada um deles faço uma função que testa se aquela informação é realmente pra ele
-				# Se for atualiza informação
+											# Para cada um deles faz uma função que testa se aquela informação é realmente pra ele
+											# Se for atualiza informação
 				if item.nome in caminho:
 					print('Sou parte do caminho:', item.nome)
 					item.dado = dados
@@ -436,17 +444,12 @@ def main():
 	dados = 'Hoje vai fazer sol'
 	fonte = '1'
 	destino = '7'
-	
-	#	----------	 Conecta	--------------
 	conecta(fonte,destino,dados)
 		
-	#dados = "Deu certo"
-	#fonte = '1'
-	#destino = '6'
-	#conecta(fonte,destino,dados)
-	
-	
-
+	dados = "Deu certo"
+	fonte = '1'
+	destino = '6'
+	conecta(fonte,destino,dados)
 	
 	return
 	
